@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>뱀파이어 학교 입학</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="intro-body">
+
+  <div class="fade-screen"></div>
+  <canvas id="lightningCanvas"></canvas>
+  <div class="sparkle-container" id="sparkleContainer"></div>
+
+  <audio id="bgm" src="bgm.mp3" loop></audio>
+
+  <button id="bgmBtn">🔊 BGM ON</button>
+
+  <div class="volume-box">
+    <label for="volumeControl">볼륨</label>
+    <input type="range" id="volumeControl" min="0" max="1" step="0.01" value="0.2">
+  </div>
+
+  <section class="screen intro-screen">
+    <div class="intro-wrap">
+      <img src="logo.png" alt="로고" class="intro-logo" />
+
+      <button id="enterBtn" class="enter-btn">
+        ✦ 뱀파이어학교입학 ✦
+      </button>
+    </div>
+  </section>
+
+  <script>
+    const bgm = document.getElementById("bgm");
+    const bgmBtn = document.getElementById("bgmBtn");
+    const volumeControl = document.getElementById("volumeControl");
+    const enterBtn = document.getElementById("enterBtn");
+    const fadeScreen = document.querySelector(".fade-screen");
+    const sparkleContainer = document.getElementById("sparkleContainer");
+
+    const savedVolume = localStorage.getItem("bgmVolume");
+    const savedPlaying = localStorage.getItem("bgmPlaying");
+
+    if (savedVolume !== null) {
+      bgm.volume = parseFloat(savedVolume);
+      volumeControl.value = savedVolume;
+    } else {
+      bgm.volume = 0.2;
+    }
+
+    if (savedPlaying === "true") {
+      bgmBtn.innerText = "🔇 BGM OFF";
+    }
+
+    bgmBtn.addEventListener("click", async () => {
+      try {
+        if (bgm.paused) {
+          await bgm.play();
+          bgmBtn.innerText = "🔇 BGM OFF";
+          localStorage.setItem("bgmPlaying", "true");
+        } else {
+          bgm.pause();
+          bgmBtn.innerText = "🔊 BGM ON";
+          localStorage.setItem("bgmPlaying", "false");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    volumeControl.addEventListener("input", () => {
+      bgm.volume = parseFloat(volumeControl.value);
+      localStorage.setItem("bgmVolume", volumeControl.value);
+    });
+
+    bgm.addEventListener("timeupdate", () => {
+      localStorage.setItem("bgmTime", bgm.currentTime);
+    });
+
+    async function fadeOutBgm() {
+      return new Promise((resolve) => {
+        if (bgm.paused) {
+          resolve();
+          return;
+        }
+
+        let vol = bgm.volume;
+        const fade = setInterval(() => {
+          vol -= 0.02;
+          if (vol <= 0) {
+            bgm.volume = 0;
+            clearInterval(fade);
+            resolve();
+          } else {
+            bgm.volume = vol;
+          }
+        }, 60);
+      });
+    }
+
+    enterBtn.addEventListener("click", async () => {
+      localStorage.setItem("bgmTime", bgm.currentTime);
+      localStorage.setItem("bgmVolume", volumeControl.value);
+      localStorage.setItem("bgmPlaying", bgm.paused ? "false" : "true");
+
+      await fadeOutBgm();
+
+      fadeScreen.classList.add("active");
+
+      setTimeout(() => {
+        window.location.href = "profile.html";
+      }, 900);
+    });
+
+    function createSparkle() {
+      const sparkle = document.createElement("span");
+      sparkle.className = "sparkle";
+      sparkle.innerHTML = "✦";
+
+      const startX = Math.random() * 100;
+      const driftX = (Math.random() - 0.5) * 260;
+
+      sparkle.style.left = startX + "vw";
+      sparkle.style.bottom = "-30px";
+      sparkle.style.fontSize = 10 + Math.random() * 16 + "px";
+      sparkle.style.animationDuration = 3 + Math.random() * 3 + "s";
+      sparkle.style.setProperty("--drift-x", driftX + "px");
+
+      sparkleContainer.appendChild(sparkle);
+
+      setTimeout(() => sparkle.remove(), 7000);
+    }
+
+    setInterval(createSparkle, 180);
+
+    const canvas = document.getElementById("lightningCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    function drawLightning(x, y) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+
+      for (let i = 0; i < 10; i++) {
+        x += (Math.random() - 0.5) * 40;
+        y += 40;
+        ctx.lineTo(x, y);
+      }
+
+      ctx.strokeStyle = "rgba(255,255,255,0.95)";
+      ctx.lineWidth = 3;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "red";
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255,0,0,0.25)";
+      ctx.lineWidth = 7;
+      ctx.stroke();
+    }
+
+    function lightningLoop() {
+      setTimeout(() => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawLightning(Math.random() * canvas.width, 0);
+
+        setTimeout(() => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }, 150);
+
+        lightningLoop();
+      }, Math.random() * 4000 + 2000);
+    }
+
+    lightningLoop();
+  </script>
+</body>
+</html>

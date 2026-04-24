@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>기숙사 배정</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="dorm-body fade-in-page">
+
+  <div class="star-container" id="starContainer"></div>
+
+  <audio id="bgm" src="bgm.mp3" loop></audio>
+  <button id="bgmBtn" class="main-bgm-btn">🔊 BGM</button>
+
+  <section class="dorm-page">
+    <div class="dorm-frame">
+
+      <div id="quizScreen">
+        <p class="dorm-top">VAMPIRE DORMITORY SELECTION</p>
+        <h1 class="dorm-title">기숙사 배정 의식</h1>
+        <p class="dorm-sub">
+          열 가지 질문에 답하면, 당신의 본성과 가장 닮은 기숙사가 결정됩니다.
+        </p>
+
+        <div class="question-box">
+          <p id="questionNumber" class="question-number">질문 1 / 10</p>
+          <h2 id="questionText" class="question-text"></h2>
+
+          <div id="answerList" class="answer-list"></div>
+        </div>
+      </div>
+
+      <div id="resultScreen" class="result-screen hidden">
+        <p class="dorm-top">DORMITORY ASSIGNMENT COMPLETE</p>
+        <h1 class="result-title">
+  당신은 <span id="resultDormName" class="dorm-name-highlight"></span>에 배정되었습니다
+</h1>
+        <p id="resultDormEng" class="result-eng"></p>
+
+        <div class="result-card">
+          <p id="resultSummary" class="result-summary"></p>
+          <p id="resultDesc" class="result-desc"></p>
+
+          <div class="result-traits">
+            <div class="result-trait-box">
+              <span class="result-label">핵심 기질</span>
+              <span id="resultTrait" class="result-value"></span>
+            </div>
+            <div class="result-trait-box">
+              <span class="result-label">상징</span>
+              <span id="resultSymbol" class="result-value"></span>
+            </div>
+            <div class="result-trait-box">
+              <span class="result-label">당신의 성향</span>
+              <span id="resultType" class="result-value"></span>
+            </div>
+            <div class="result-trait-box">
+              <span class="result-label">어울리는 길</span>
+              <span id="resultRoute" class="result-value"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-btn-wrap">
+          <button id="restartBtn" class="result-btn">✦ 다시 배정받기 ✦</button>
+          <a href="main.html" class="result-btn link-btn">✦ 메인으로 돌아가기 ✦</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script>
+    const bgm = document.getElementById("bgm");
+    const bgmBtn = document.getElementById("bgmBtn");
+    const starContainer = document.getElementById("starContainer");
+
+    const savedTime = localStorage.getItem("bgmTime");
+    const savedVolume = localStorage.getItem("bgmVolume");
+    const savedPlaying = localStorage.getItem("bgmPlaying");
+
+    const targetVolume = savedVolume ? parseFloat(savedVolume) : 0.2;
+    bgm.volume = targetVolume;
+
+    async function fadeInBgm() {
+      try {
+        bgm.volume = 0;
+        if (savedTime) bgm.currentTime = parseFloat(savedTime);
+        await bgm.play();
+
+        let vol = 0;
+        const fade = setInterval(() => {
+          vol += 0.02;
+          if (vol >= targetVolume) {
+            bgm.volume = targetVolume;
+            clearInterval(fade);
+          } else {
+            bgm.volume = vol;
+          }
+        }, 60);
+
+        bgmBtn.textContent = "🔇 BGM";
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    window.addEventListener("load", async () => {
+      if (savedPlaying === "true") {
+        await fadeInBgm();
+      }
+      renderQuestion();
+    });
+
+    document.body.addEventListener("click", async () => {
+      if (savedPlaying === "true" && bgm.paused) {
+        try {
+          if (savedTime) bgm.currentTime = parseFloat(savedTime);
+          await bgm.play();
+          bgm.volume = targetVolume;
+          bgmBtn.textContent = "🔇 BGM";
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }, { once: true });
+
+    bgmBtn.addEventListener("click", async () => {
+      try {
+        if (bgm.paused) {
+          await bgm.play();
+          bgm.volume = targetVolume;
+          bgmBtn.textContent = "🔇 BGM";
+          localStorage.setItem("bgmPlaying", "true");
+        } else {
+          bgm.pause();
+          bgmBtn.textContent = "🔊 BGM";
+          localStorage.setItem("bgmPlaying", "false");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    bgm.addEventListener("timeupdate", () => {
+      localStorage.setItem("bgmTime", bgm.currentTime);
+    });
+
+    function createStar() {
+      const star = document.createElement("span");
+      star.className = "floating-star";
+      star.innerHTML = "✦";
+      star.style.left = Math.random() * 100 + "vw";
+      star.style.top = Math.random() * 100 + "vh";
+      star.style.fontSize = 8 + Math.random() * 16 + "px";
+      star.style.animationDuration = 5 + Math.random() * 6 + "s";
+      starContainer.appendChild(star);
+      setTimeout(() => star.remove(), 10000);
+    }
+
+    setInterval(createStar, 260);
+
+    const dorms = {
+      redMoon: {
+        name: "붉은 달 기숙사",
+        eng: "Red Moon Dormitory",
+        summary: "권위와 지배, 그리고 강한 혈통의 의지가 당신 안에 흐르고 있습니다.",
+        desc: "당신은 타인 위에 서는 것에 망설임이 없고, 필요하다면 차갑고 단호한 결정을 내릴 수 있는 사람입니다. 감정보다 힘과 질서를 중시하며, 태생적으로 군림하는 자의 기질을 지니고 있습니다.",
+        trait: "지배 / 오만 / 결단",
+        symbol: "붉은 장미",
+        type: "타인을 이끄는 지배형",
+        route: "통치자, 대표자, 가문의 후계"
+      },
+      silverMist: {
+        name: "은빛 안개 기숙사",
+        eng: "Silver Mist Dormitory",
+        summary: "당신은 날카로운 이성과 침묵 속의 통찰을 지닌 존재입니다.",
+        desc: "감정적으로 움직이기보다 상황을 관찰하고, 가장 효율적인 답을 찾아내는 쪽에 가깝습니다. 쉽게 속내를 드러내지 않지만, 누구보다 멀리 보고 조용히 판을 바꾸는 힘을 지니고 있습니다.",
+        trait: "이성 / 전략 / 비밀",
+        symbol: "은빛 안개",
+        type: "판을 읽는 책략형",
+        route: "참모, 기록자, 금서 관리자"
+      },
+      dawnDew: {
+        name: "새벽 이슬 기숙사",
+        eng: "Dawn Dew Dormitory",
+        summary: "당신 안에는 아직 사라지지 않은 순수함과 보호 본능이 남아 있습니다.",
+        desc: "당신은 강함만을 좇기보다 관계와 감정, 그리고 잃지 말아야 할 가치를 소중히 여깁니다. 상처받기 쉽지만 그만큼 타인을 지키려는 힘도 크며, 어둠 속에서도 끝내 빛을 붙드는 사람입니다.",
+        trait: "순수 / 헌신 / 이상",
+        symbol: "새벽 이슬",
+        type: "상처를 품은 보호형",
+        route: "수호자, 치유자, 조율자"
+      },
+      blackThorn: {
+        name: "검은 가시 기숙사",
+        eng: "Black Thorn Dormitory",
+        summary: "당신은 금기와 변화, 그리고 위험한 자유를 갈망하는 존재입니다.",
+        desc: "정해진 규칙과 질서에 쉽게 순응하지 않으며, 타인이 두려워하는 진실에도 손을 뻗을 수 있는 사람입니다. 파괴와 재탄생, 금기와 유혹이 당신의 본성과 깊게 맞닿아 있습니다.",
+        trait: "반항 / 금기 / 변화",
+        symbol: "검은 가시",
+        type: "위험한 자유 추구형",
+        route: "실험자, 파괴자, 변혁자"
+      }
+    };
+
+    const questions = [
+      {
+        text: "당신에게 가장 중요한 것은 무엇입니까?",
+        answers: [
+          { text: "누구도 거스를 수 없는 힘", scores: { redMoon: 2 } },
+          { text: "모든 상황을 읽는 지혜", scores: { silverMist: 2 } },
+          { text: "지키고 싶은 사람", scores: { dawnDew: 2 } },
+          { text: "속박되지 않는 자유", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "누군가가 당신을 배신했다면 어떻게 하겠습니까?",
+        answers: [
+          { text: "용서하지 않고 확실히 굴복시킨다", scores: { redMoon: 2 } },
+          { text: "감정을 숨기고 약점을 파악한다", scores: { silverMist: 2 } },
+          { text: "이유를 먼저 들으려 한다", scores: { dawnDew: 2 } },
+          { text: "더 크게 되갚아준다", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "밤의 학교에서 가장 끌리는 장소는?",
+        answers: [
+          { text: "가장 높은 탑 위의 집무실", scores: { redMoon: 2 } },
+          { text: "봉인된 금서가 있는 서고", scores: { silverMist: 2 } },
+          { text: "달빛이 비치는 정원", scores: { dawnDew: 2 } },
+          { text: "출입 금지된 실험실", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "당신의 힘이 각성하는 순간은 언제입니까?",
+        answers: [
+          { text: "누군가 위에 군림해야 할 때", scores: { redMoon: 2 } },
+          { text: "진실을 꿰뚫어볼 때", scores: { silverMist: 2 } },
+          { text: "누군가를 지켜야 할 때", scores: { dawnDew: 2 } },
+          { text: "금기를 넘어서는 순간", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "타인이 당신을 가장 자주 어떻게 평가합니까?",
+        answers: [
+          { text: "위압적이고 고귀하다", scores: { redMoon: 2 } },
+          { text: "차갑고 알 수 없다", scores: { silverMist: 2 } },
+          { text: "부드럽지만 강하다", scores: { dawnDew: 2 } },
+          { text: "위험하고 예측 불가하다", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "당신이 비밀을 알게 되었다면?",
+        answers: [
+          { text: "권력을 쥐는 데 사용한다", scores: { redMoon: 2 } },
+          { text: "조용히 보관하며 필요할 때 꺼낸다", scores: { silverMist: 2 } },
+          { text: "누군가 다치지 않게 쓰고 싶다", scores: { dawnDew: 2 } },
+          { text: "세상을 흔들 카드로 삼는다", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "당신에게 가장 어울리는 상징은?",
+        answers: [
+          { text: "왕관", scores: { redMoon: 2 } },
+          { text: "안개", scores: { silverMist: 2 } },
+          { text: "이슬", scores: { dawnDew: 2 } },
+          { text: "가시", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "사람들이 당신에게 기대하는 역할은?",
+        answers: [
+          { text: "명령하고 이끄는 자", scores: { redMoon: 2 } },
+          { text: "판을 읽고 설계하는 자", scores: { silverMist: 2 } },
+          { text: "상처를 감싸는 자", scores: { dawnDew: 2 } },
+          { text: "질서를 무너뜨리는 자", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "가장 두려운 것은 무엇입니까?",
+        answers: [
+          { text: "무력해지는 것", scores: { redMoon: 2 } },
+          { text: "무지한 상태로 남는 것", scores: { silverMist: 2 } },
+          { text: "소중한 이를 잃는 것", scores: { dawnDew: 2 } },
+          { text: "자유를 빼앗기는 것", scores: { blackThorn: 2 } }
+        ]
+      },
+      {
+        text: "마지막으로, 당신은 어떤 밤을 원합니까?",
+        answers: [
+          { text: "모든 것을 내 아래 두는 밤", scores: { redMoon: 2 } },
+          { text: "진실만이 남는 고요한 밤", scores: { silverMist: 2 } },
+          { text: "누군가와 함께 견디는 밤", scores: { dawnDew: 2 } },
+          { text: "모든 금기가 무너지는 밤", scores: { blackThorn: 2 } }
+        ]
+      }
+    ];
+
+    let currentQuestion = 0;
+    let totalScores = {
+      redMoon: 0,
+      silverMist: 0,
+      dawnDew: 0,
+      blackThorn: 0
+    };
+
+    const questionNumber = document.getElementById("questionNumber");
+    const questionText = document.getElementById("questionText");
+    const answerList = document.getElementById("answerList");
+    const quizScreen = document.getElementById("quizScreen");
+    const resultScreen = document.getElementById("resultScreen");
+
+    const resultDormName = document.getElementById("resultDormName");
+    const resultDormEng = document.getElementById("resultDormEng");
+    const resultSummary = document.getElementById("resultSummary");
+    const resultDesc = document.getElementById("resultDesc");
+    const resultTrait = document.getElementById("resultTrait");
+    const resultSymbol = document.getElementById("resultSymbol");
+    const resultType = document.getElementById("resultType");
+    const resultRoute = document.getElementById("resultRoute");
+    const restartBtn = document.getElementById("restartBtn");
+
+    function renderQuestion() {
+      const q = questions[currentQuestion];
+      questionNumber.textContent = `질문 ${currentQuestion + 1} / ${questions.length}`;
+      questionText.textContent = q.text;
+      answerList.innerHTML = "";
+
+      q.answers.forEach((answer) => {
+        const btn = document.createElement("button");
+        btn.className = "answer-btn";
+        btn.textContent = answer.text;
+
+        btn.addEventListener("click", () => {
+          for (const key in answer.scores) {
+            totalScores[key] += answer.scores[key];
+          }
+
+          currentQuestion++;
+
+          if (currentQuestion < questions.length) {
+            renderQuestion();
+          } else {
+            showResult();
+          }
+        });
+
+        answerList.appendChild(btn);
+      });
+    }
+
+    function showResult() {
+      const sorted = Object.entries(totalScores).sort((a, b) => b[1] - a[1]);
+      const winnerKey = sorted[0][0];
+      const winner = dorms[winnerKey];
+
+      resultDormName.textContent = winner.name;
+
+resultDormName.className = "dorm-name-highlight";
+resultDormName.classList.add(`dorm-${winnerKey}`);
+
+      resultDormEng.textContent = winner.eng;
+      resultSummary.textContent = winner.summary;
+      resultDesc.textContent = winner.desc;
+      resultTrait.textContent = winner.trait;
+      resultSymbol.textContent = winner.symbol;
+      resultType.textContent = winner.type;
+      resultRoute.textContent = winner.route;
+
+      quizScreen.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
+    }
+
+    restartBtn.addEventListener("click", () => {
+      currentQuestion = 0;
+      totalScores = {
+        redMoon: 0,
+        silverMist: 0,
+        dawnDew: 0,
+        blackThorn: 0
+      };
+
+      resultScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      renderQuestion();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>

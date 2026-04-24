@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>뱀파이어 학교</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="main-body fade-in-page">
+
+  <div class="star-container" id="starContainer"></div>
+
+  <audio id="bgm" src="bgm.mp3" loop></audio>
+
+  <button id="bgmBtn" class="main-bgm-btn">🔊 BGM</button>
+
+  <section class="main-home">
+    <div class="main-letter">
+      <p class="main-letter-top">VAMPIRE SCHOOL OFFICIAL LETTER</p>
+
+      <h1 class="main-title">
+        <span id="displayName">입학생</span> 님의<br>
+        입학이 승인되었습니다
+      </h1>
+
+      <p class="main-subtext">
+        붉은 달이 떠오른 밤,<br>
+        당신은 이제 뱀파이어 학교의 정식 입학생입니다.
+      </p>
+
+      <div class="main-seal">✦ NIGHT ENROLLED ✦</div>
+
+      <div class="menu-grid">
+        <a href="world.html" class="menu-card">
+          <span class="menu-kor">세계관 기록서</span>
+          <span class="menu-eng">Bloodline Archive</span>
+          <p>혼혈, 순혈, 그리고 뱀파이어의 기원</p>
+        </a>
+
+        <a href="school.html" class="menu-card">
+          <span class="menu-kor">기숙사 배정</span>
+          <span class="menu-eng">School Information</span>
+          <p>당신에게 맞는 기숙사를 배정해드립니다</p>
+        </a>
+
+        <a href="boys.html" class="menu-card">
+          <span class="menu-kor">야간 학생 명부</span>
+          <span class="menu-eng">Students of the Night</span>
+          <p>남주와 주요 인물들의 기록</p>
+        </a>
+
+        <a href="family.html" class="menu-card locked-card">
+          <span class="menu-kor">가문 기록</span>
+          <span class="menu-eng">Restricted Archive</span>
+          <p>뱀파이어 가문</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const bgm = document.getElementById("bgm");
+    const bgmBtn = document.getElementById("bgmBtn");
+    const displayName = document.getElementById("displayName");
+    const starContainer = document.getElementById("starContainer");
+
+    const savedName = localStorage.getItem("vampireUserName");
+    const savedTime = localStorage.getItem("bgmTime");
+    const savedVolume = localStorage.getItem("bgmVolume");
+    const savedPlaying = localStorage.getItem("bgmPlaying");
+
+    if (savedName && savedName.trim() !== "") {
+      displayName.textContent = savedName;
+    }
+
+    const targetVolume = savedVolume ? parseFloat(savedVolume) : 0.2;
+    bgm.volume = targetVolume;
+
+    async function fadeInBgm(volume) {
+      try {
+        bgm.volume = 0;
+        if (savedTime) {
+          bgm.currentTime = parseFloat(savedTime);
+        }
+        await bgm.play();
+
+        let vol = 0;
+        const fade = setInterval(() => {
+          vol += 0.02;
+          if (vol >= volume) {
+            bgm.volume = volume;
+            clearInterval(fade);
+          } else {
+            bgm.volume = vol;
+          }
+        }, 60);
+
+        bgmBtn.textContent = "🔇 BGM";
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    async function tryAutoplay() {
+      if (savedPlaying === "true") {
+        await fadeInBgm(targetVolume);
+      }
+    }
+
+    window.addEventListener("load", async () => {
+      await tryAutoplay();
+    });
+
+    document.body.addEventListener("click", async () => {
+      if (savedPlaying === "true" && bgm.paused) {
+        try {
+          if (savedTime) {
+            bgm.currentTime = parseFloat(savedTime);
+          }
+          await bgm.play();
+          bgm.volume = targetVolume;
+          bgmBtn.textContent = "🔇 BGM";
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    }, { once: true });
+
+    bgmBtn.addEventListener("click", async () => {
+      try {
+        if (bgm.paused) {
+          await bgm.play();
+          bgm.volume = targetVolume;
+          bgmBtn.textContent = "🔇 BGM";
+          localStorage.setItem("bgmPlaying", "true");
+        } else {
+          bgm.pause();
+          bgmBtn.textContent = "🔊 BGM";
+          localStorage.setItem("bgmPlaying", "false");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    bgm.addEventListener("timeupdate", () => {
+      localStorage.setItem("bgmTime", bgm.currentTime);
+    });
+
+    function createStar() {
+      const star = document.createElement("span");
+      star.className = "floating-star";
+      star.innerHTML = "✦";
+
+      star.style.left = Math.random() * 100 + "vw";
+      star.style.top = Math.random() * 100 + "vh";
+      star.style.fontSize = 8 + Math.random() * 16 + "px";
+      star.style.animationDuration = 5 + Math.random() * 6 + "s";
+
+      starContainer.appendChild(star);
+
+      setTimeout(() => {
+        star.remove();
+      }, 11000);
+    }
+
+    setInterval(createStar, 260);
+  </script>
+</body>
+</html>

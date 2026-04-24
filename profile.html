@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>입학 서신</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="name-body fade-in-page">
+
+  <div class="fade-screen"></div>
+  <div class="star-container" id="starContainer"></div>
+
+  <audio id="bgm" src="bgm.mp3" loop></audio>
+
+  <button id="bgmBtn">🔊 BGM ON</button>
+
+  <div class="volume-box">
+    <label for="volumeControl">볼륨</label>
+    <input type="range" id="volumeControl" min="0" max="1" step="0.01" value="0.2">
+  </div>
+
+  <section class="name-screen">
+    <div class="letter-card">
+      <p class="letter-top">VAMPIRE ENROLLMENT LETTER</p>
+      <h1 class="letter-title">입학 서신</h1>
+      <p class="letter-text">
+        입학 서신을 완성하기 위해서는<br>
+        당신의 이름이 필요합니다.
+      </p>
+
+      <p class="letter-sub">수신인의 성명을 기입해 주십시오.</p>
+
+      <form id="nameForm" class="name-form">
+        <input
+          type="text"
+          id="userName"
+          class="name-input"
+          placeholder="수신인의 이름"
+          maxlength="20"
+          required
+        />
+
+        <p id="errorText" class="error-text"></p>
+
+        <button type="submit" class="confirm-btn">
+          ✦ 서신 봉인 열기 ✦
+        </button>
+      </form>
+
+      <p id="signature" class="signature-text"></p>
+    </div>
+  </section>
+
+  <script>
+    const bgm = document.getElementById("bgm");
+    const bgmBtn = document.getElementById("bgmBtn");
+    const volumeControl = document.getElementById("volumeControl");
+    const fadeScreen = document.querySelector(".fade-screen");
+
+    const nameForm = document.getElementById("nameForm");
+    const userName = document.getElementById("userName");
+    const errorText = document.getElementById("errorText");
+    const signature = document.getElementById("signature");
+
+    async function fadeInBgm(targetVolume) {
+      try {
+        bgm.volume = 0;
+        await bgm.play();
+
+        let vol = 0;
+        const fade = setInterval(() => {
+          vol += 0.02;
+          if (vol >= targetVolume) {
+            bgm.volume = targetVolume;
+            clearInterval(fade);
+          } else {
+            bgm.volume = vol;
+          }
+        }, 60);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    async function fadeOutBgm() {
+      return new Promise((resolve) => {
+        if (bgm.paused) {
+          resolve();
+          return;
+        }
+
+        let vol = bgm.volume;
+        const fade = setInterval(() => {
+          vol -= 0.02;
+          if (vol <= 0) {
+            bgm.volume = 0;
+            clearInterval(fade);
+            resolve();
+          } else {
+            bgm.volume = vol;
+          }
+        }, 60);
+      });
+    }
+
+    window.addEventListener("load", async () => {
+      const savedTime = localStorage.getItem("bgmTime");
+      const savedVolume = localStorage.getItem("bgmVolume");
+      const savedPlaying = localStorage.getItem("bgmPlaying");
+
+      const targetVolume = savedVolume ? parseFloat(savedVolume) : 0.2;
+      volumeControl.value = targetVolume;
+
+      bgm.addEventListener("loadedmetadata", async () => {
+        if (savedTime) {
+          bgm.currentTime = parseFloat(savedTime);
+        }
+
+        if (savedPlaying === "true") {
+          await fadeInBgm(targetVolume);
+          bgmBtn.innerText = "🔇 BGM OFF";
+        }
+      });
+    });
+
+    bgmBtn.addEventListener("click", async () => {
+      try {
+        if (bgm.paused) {
+          await bgm.play();
+          bgm.volume = parseFloat(volumeControl.value);
+          bgmBtn.innerText = "🔇 BGM OFF";
+          localStorage.setItem("bgmPlaying", "true");
+        } else {
+          bgm.pause();
+          bgmBtn.innerText = "🔊 BGM ON";
+          localStorage.setItem("bgmPlaying", "false");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    volumeControl.addEventListener("input", () => {
+      bgm.volume = parseFloat(volumeControl.value);
+      localStorage.setItem("bgmVolume", volumeControl.value);
+    });
+
+    bgm.addEventListener("timeupdate", () => {
+      localStorage.setItem("bgmTime", bgm.currentTime);
+    });
+
+    userName.addEventListener("input", () => {
+      userName.style.textShadow = "0 0 6px rgba(255, 200, 200, 0.15)";
+    });
+
+    nameForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const nameValue = userName.value.trim();
+
+      if (nameValue === "") {
+        errorText.textContent = "이름을 입력해야 입학이 승인됩니다.";
+        userName.focus();
+        return;
+      }
+
+      errorText.textContent = "";
+      localStorage.setItem("vampireUserName", nameValue);
+      localStorage.setItem("bgmTime", bgm.currentTime);
+      localStorage.setItem("bgmVolume", volumeControl.value);
+      localStorage.setItem("bgmPlaying", bgm.paused ? "false" : "true");
+
+      signature.innerText = "";
+      signature.style.opacity = 1;
+
+      let i = 0;
+
+      function typeEffect() {
+        if (i < nameValue.length) {
+          signature.innerText += nameValue[i];
+          i++;
+          setTimeout(typeEffect, 120);
+        } else {
+          proceedToMain();
+        }
+      }
+
+      async function proceedToMain() {
+        await fadeOutBgm();
+        fadeScreen.classList.add("active");
+
+        setTimeout(() => {
+          window.location.href = "main.html";
+        }, 900);
+      }
+
+      typeEffect();
+    });
+
+    const starContainer = document.getElementById("starContainer");
+
+    function createStar() {
+      const star = document.createElement("span");
+      star.className = "floating-star";
+      star.innerHTML = "✦";
+
+      star.style.left = Math.random() * 100 + "vw";
+      star.style.top = Math.random() * 100 + "vh";
+      star.style.fontSize = 8 + Math.random() * 18 + "px";
+      star.style.animationDuration = 4 + Math.random() * 6 + "s";
+      star.style.animationDelay = Math.random() * 2 + "s";
+
+      starContainer.appendChild(star);
+
+      setTimeout(() => {
+        star.remove();
+      }, 10000);
+    }
+
+    setInterval(createStar, 250);
+  </script>
+</body>
+</html>

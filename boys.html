@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>야간 학생 명부</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at center, rgba(110, 15, 25, 0.12), transparent 30%),
+        linear-gradient(180deg, #0f0405 0%, #170607 40%, #090203 100%);
+      color: #f3e6dc;
+      font-family: "Nanum Myeongjo", serif;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    .star-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .floating-star {
+      position: absolute;
+      color: rgba(218, 160, 150, 0.38);
+      text-shadow: 0 0 6px rgba(255, 200, 190, 0.05);
+      opacity: 0;
+      animation: starDrift linear forwards;
+    }
+
+    @keyframes starDrift {
+      0% {
+        transform: translateY(20px) translateX(0) scale(0.7) rotate(0deg);
+        opacity: 0;
+      }
+      20% {
+        opacity: 0.9;
+      }
+      50% {
+        transform: translateY(-20px) translateX(12px) scale(1) rotate(10deg);
+        opacity: 0.7;
+      }
+      100% {
+        transform: translateY(-70px) translateX(-10px) scale(1.15) rotate(20deg);
+        opacity: 0;
+      }
+    }
+
+    .bgm-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 20;
+      background: rgba(25, 8, 8, 0.88);
+      color: #fff;
+      border: 1px solid #8b0000;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: "Nanum Myeongjo", serif;
+    }
+
+    .page {
+      padding: 28px;
+      position: relative;
+      z-index: 3;
+    }
+
+    .frame {
+      border: 1px solid rgba(144, 84, 72, 0.85);
+      box-shadow:
+        0 0 0 1px rgba(88, 34, 28, 0.75),
+        inset 0 0 60px rgba(255, 221, 190, 0.03);
+      background:
+        linear-gradient(180deg, rgba(45, 16, 16, 0.96) 0%, rgba(22, 8, 8, 0.98) 100%);
+      padding: 20px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      gap: 20px;
+    }
+
+    .logo {
+      width: 120px;
+      height: auto;
+      display: block;
+      opacity: 0.95;
+    }
+
+    .back-btn {
+      display: inline-block;
+      padding: 12px 20px;
+      border: 1px solid rgba(170, 90, 90, 0.85);
+      color: #fff3ec;
+      text-decoration: none;
+      background: rgba(40, 5, 8, 0.6);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr 220px;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .left {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .main-image,
+    .banner-image {
+      width: 100%;
+      display: block;
+      border: 1px solid rgba(144, 84, 72, 0.85);
+      box-shadow:
+        0 0 0 1px rgba(88, 34, 28, 0.75),
+        inset 0 0 30px rgba(255, 221, 190, 0.03);
+      background: rgba(20, 0, 0, 0.25);
+    }
+
+    .center {
+      min-width: 0;
+    }
+
+    .mini-title {
+      color: #c98d80;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .name {
+      font-size: 54px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      color: #f4e8df;
+    }
+
+    .role {
+      color: #d9c3bb;
+      font-size: 20px;
+      margin-bottom: 22px;
+    }
+
+    .divider {
+      font-size: 24px;
+      color: rgba(220, 165, 145, 0.45);
+      letter-spacing: 10px;
+      margin-bottom: 20px;
+    }
+
+    .info-card {
+      background:
+        linear-gradient(180deg, rgba(53, 20, 18, 0.96) 0%, rgba(31, 11, 10, 0.98) 100%);
+      border: 1px solid rgba(144, 84, 72, 0.85);
+      box-shadow:
+        0 0 0 1px rgba(88, 34, 28, 0.75),
+        inset 0 0 40px rgba(255, 221, 190, 0.03);
+      padding: 30px;
+      position: relative;
+    }
+
+    .info-card::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      border: 1px solid rgba(170, 115, 98, 0.22);
+      pointer-events: none;
+    }
+
+    .section-title {
+      font-size: 30px;
+      color: #f6e7df;
+      margin-bottom: 22px;
+    }
+
+    .desc {
+      color: #ddd;
+      font-size: 18px;
+      line-height: 1.9;
+      margin-bottom: 18px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 24px;
+    }
+
+    .info-box {
+      border: 1px solid rgba(170, 115, 98, 0.28);
+      background: rgba(20, 0, 0, 0.18);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .info-label {
+      color: #c79287;
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+
+    .info-value {
+      color: #f5e7df;
+      font-size: 18px;
+    }
+
+    .right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .list-btn {
+      width: 100%;
+      padding: 16px 14px;
+      background:
+        linear-gradient(180deg, rgba(32, 8, 8, 0.9), rgba(18, 4, 4, 0.96));
+      border: 1px solid rgba(145, 60, 60, 0.7);
+      color: #f6e7df;
+      font-family: "Nanum Myeongjo", serif;
+      font-size: 18px;
+      cursor: pointer;
+      transition: 0.25s ease;
+    }
+
+    .list-btn:hover,
+    .list-btn.active {
+      background: linear-gradient(180deg, #6d211b 0%, #40100d 100%);
+      box-shadow: 0 0 20px rgba(180, 30, 40, 0.12);
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .right {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .logo {
+        width: 90px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page {
+        padding: 16px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .name {
+        font-size: 38px;
+      }
+
+      .role {
+        font-size: 17px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .right {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="star-container" id="starContainer"></div>
+
+  <audio id="bgm" src="bgm.mp3" loop></audio>
+  <button id="bgmBtn" class="bgm-btn">🔊 BGM</button>
+
+  <section class="page">
+    <div class="frame">
+
+      <div class="topbar">
+        <img src="logo.png" alt="뱀파이어 학교 로고" class="logo" />
+        <a href="main.html" class="back-btn">✦ 메인으로 돌아가기 ✦</a>
+      </div>
+
+      <div class="layout">
+        <aside class="left">
+          <img id="boyMainImage" src="JARCAN.webp" alt="남주 이미지" class="main-image" />
+        
+        </aside>
+
+        <main class="center">
+          <p class="mini-title">야간 학생 명부</p>
+          <h1 id="boyName" class="name">자르칸 그림발렌</h1>
+          <p id="boyRole" class="role">붉은 달 기숙사 대표 / 순혈 뱀파이어</p>
+
+          <div class="divider">✦</div>
+
+          <section class="info-card">
+            <h2 class="section-title">인물 기록</h2>
+            <p id="boyDesc1" class="desc">적도의 태양 같은 검은 머리카락과 붉은 눈을 지닌 순혈 뱀파이어.</p>
+            <p id="boyDesc2" class="desc">화려한 말투와 오만한 태도를 지녔다. 그림발렌 가문의 적통 후계자.</p>
+
+            <div class="info-grid">
+              <div class="info-box">
+                <span class="info-label">나이</span>
+                <span id="boyAge" class="info-value">??세</span>
+              </div>
+
+              <div class="info-box">
+                <span class="info-label">상징</span>
+                <span id="boySymbol" class="info-value">붉은 가시</span>
+              </div>
+
+              <div class="info-box">
+                <span class="info-label">기질</span>
+                <span id="boyTrait" class="info-value">오만 / 우아 / 집착</span>
+              </div>
+
+              <div class="info-box">
+                <span class="info-label">위험도</span>
+                <span id="boyDanger" class="info-value">매우 높음</span>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <aside class="right">
+          <button class="list-btn active"
+            data-name="자르칸 그림발렌"
+            data-role="붉은 달 기숙사 대표 / 순혈 뱀파이어"
+            data-age="??세"
+            data-symbol="붉은 가시"
+            data-trait="오만 / 우아 / 집착"
+            data-danger="매우 높음"
+            data-desc1="적도의 태양 같은 검은 머리카락과 붉은 눈을 지닌 순혈 뱀파이어."
+            data-desc2="화려한 말투와 오만한 태도를 지녔다. 그림발렌 가문의 적통 후계자"
+            data-main="JARCAN.webp"
+            
+          >
+            자르칸
+          </button>
+
+          <button class="list-btn"
+            data-name="쇼 루스차일드"
+            data-role="학생회 집행부 / 순혈 뱀파이어"
+            data-age="??세"
+            data-symbol="은빛 십자가"
+            data-trait="냉정 / 절제 / 헌신"
+            data-danger="높음"
+            data-desc1="새벽 안개 같은 은발과 서늘한 눈빛을 지닌 혼혈 뱀파이어."
+            data-desc2="루스차일드 가문 적통 차남, 형과 권력다툼 "
+            data-main="SUO.png"
+            
+          >
+            쇼
+          </button>
+
+          <button class="list-btn"
+            data-name="발렌티스 아케인"
+            data-role="새벽 이슬 기숙사 대표 / 순혈 뱀파이어"
+            data-age="??세"
+            data-symbol="검은 깃펜"
+            data-trait="조용 / 집요 / 음침"
+            data-danger="중간"
+            data-desc1="어두운 서고의 냄새를 닮은 남자. 늘 검은 장갑을 끼고 다닌다."
+            data-desc2="발렌티스 가문 現 가주, 성인식을 이미 치뤘다."
+            data-main="balentis.png"
+            
+          >
+            발렌티스
+          </button>
+
+          <button class="list-btn"
+            data-name="카엘 루벤"
+            data-role="문제아 / 순혈 뱀파이어"
+            data-age="불명"
+            data-symbol="검은 달"
+            data-trait="신비 / 위험 / 유혹"
+            data-danger="최상"
+            data-desc1="이름 외의 모든 것이 불확실한 수수께끼 같은 전학생."
+            data-desc2="루벤 가문 차남, 집안에서 버려진 사생아."
+            data-main="kale.png"
+            
+          >
+            카엘
+          </button>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const bgm = document.getElementById("bgm");
+    const bgmBtn = document.getElementById("bgmBtn");
+    const starContainer = document.getElementById("starContainer");
+
+    const savedTime = localStorage.getItem("bgmTime");
+    const savedVolume = localStorage.getItem("bgmVolume");
+    const savedPlaying = localStorage.getItem("bgmPlaying");
+
+    const targetVolume = savedVolume ? parseFloat(savedVolume) : 0.2;
+    bgm.volume = targetVolume;
+
+    async function fadeInBgm() {
+      try {
+        bgm.volume = 0;
+        if (savedTime) {
+          bgm.currentTime = parseFloat(savedTime);
+        }
+        await bgm.play();
+
+        let vol = 0;
+        const fade = setInterval(() => {
+          vol += 0.02;
+          if (vol >= targetVolume) {
+            bgm.volume = targetVolume;
+            clearInterval(fade);
+          } else {
+            bgm.volume = vol;
+          }
+        }, 60);
+
+        bgmBtn.textContent = "🔇 BGM";
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    window.addEventListener("load", async () => {
+      if (savedPlaying === "true") {
+        await fadeInBgm();
+      }
+    });
+
+    bgmBtn.addEventListener("click", async () => {
+      try {
+        if (bgm.paused) {
+          await bgm.play();
+          bgm.volume = targetVolume;
+          bgmBtn.textContent = "🔇 BGM";
+          localStorage.setItem("bgmPlaying", "true");
+        } else {
+          bgm.pause();
+          bgmBtn.textContent = "🔊 BGM";
+          localStorage.setItem("bgmPlaying", "false");
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    });
+
+    bgm.addEventListener("timeupdate", () => {
+      localStorage.setItem("bgmTime", bgm.currentTime);
+    });
+
+    function createStar() {
+      const star = document.createElement("span");
+      star.className = "floating-star";
+      star.innerHTML = "✦";
+      star.style.left = Math.random() * 100 + "vw";
+      star.style.top = Math.random() * 100 + "vh";
+      star.style.fontSize = 8 + Math.random() * 16 + "px";
+      star.style.animationDuration = 5 + Math.random() * 6 + "s";
+      starContainer.appendChild(star);
+      setTimeout(() => star.remove(), 10000);
+    }
+
+    setInterval(createStar, 260);
+
+      const buttons = document.querySelectorAll(".list-btn");
+
+  const boyName = document.getElementById("boyName");
+  const boyRole = document.getElementById("boyRole");
+  const boyAge = document.getElementById("boyAge");
+  const boySymbol = document.getElementById("boySymbol");
+  const boyTrait = document.getElementById("boyTrait");
+  const boyDanger = document.getElementById("boyDanger");
+  const boyDesc1 = document.getElementById("boyDesc1");
+  const boyDesc2 = document.getElementById("boyDesc2");
+  const boyMainImage = document.getElementById("boyMainImage");
+  const boyBannerImage = document.getElementById("boyBannerImage");
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      buttons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      boyName.textContent = btn.dataset.name;
+      boyRole.textContent = btn.dataset.role;
+      boyAge.textContent = btn.dataset.age;
+      boySymbol.textContent = btn.dataset.symbol;
+      boyTrait.textContent = btn.dataset.trait;
+      boyDanger.textContent = btn.dataset.danger;
+      boyDesc1.textContent = btn.dataset.desc1;
+      boyDesc2.textContent = btn.dataset.desc2;
+      boyMainImage.src = btn.dataset.main;
+      boyBannerImage.src = btn.dataset.banner;
+    });
+  });
+
+  </script>
+</body>
+</html>
